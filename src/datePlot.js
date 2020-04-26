@@ -4,41 +4,12 @@
  * @Author: Mengwei Li
  * @Date: 2020-04-04 11:20:38
  * @LastEditors: Mengwei Li
- * @LastEditTime: 2020-04-06 16:07:01
+ * @LastEditTime: 2020-04-15 10:38:18
  */
 
-import * as echarts from 'echarts';
-import { dateFormat } from 'highcharts';
-export const drawBarPlot = (data) => {
-    let option = {
-        grid:{
-            x:40,
-            x2:20,
-            y:10,
-            y2:40
-        },
-        tooltip: {},
-        xAxis: {
-            type: 'category',
-            data: data.map(e => e.name),
-            axisLabel: {
-                interval: 0,
-                rotate: 30,
-                fontSize: 8
-            }
-        },
-        yAxis: {
-            type: 'log',
-            logBase: 2
-        },
-        series: [{
-            data: data.map(e => e.count),
-            type: 'bar'
-        }]
-    };
-    echarts.init(document.getElementById("datePlot")).clear()
-    echarts.init(document.getElementById("datePlot")).setOption(option);
-}
+// import * as echarts from 'echarts';
+import { getUniqueVirus } from './dataProcess'
+
 
 export const drawHeatmapDate = (data) => {
 
@@ -63,7 +34,6 @@ export const drawHeatmapDate = (data) => {
         tooltip: {
             formatter: function (params, ticket, callback) {
                 return "<strong>"+params.value[0]+"</strong><br>Isolates: " + params.value[1]
-                console.log(params)
             }
         },
         visualMap: {
@@ -116,5 +86,3 @@ export const drawHeatmapDate = (data) => {
 
     return chart;
 }
-
-

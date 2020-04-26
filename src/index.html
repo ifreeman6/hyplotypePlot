@@ -4,20 +4,35 @@
  * @Author: Mengwei Li
  * @Date: 2020-04-02 10:03:16
  * @LastEditors: Mengwei Li
- * @LastEditTime: 2020-04-06 17:38:58
+ * @LastEditTime: 2020-04-26 22:48:24
  -->
+
+<title>Viral Genotyping Map - 2019 Novel Coronavirus Resource</title>
 <link href="https://cdn.bootcss.com/twitter-bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.bootcss.com/bootstrap-table/1.16.0/bootstrap-table.min.css" rel="stylesheet">
 <link href="https://cdn.bootcss.com/font-awesome/5.13.0/css/all.min.css" rel="stylesheet">
 <link href="https://cdn.bootcss.com/select2/4.0.12/css/select2.min.css" rel="stylesheet">
 <link rel='stylesheet' type='text/css' href="https://bigd.big.ac.cn:443/ncov/static/sui/semantic.min.css">
 <link rel="stylesheet" type="text/css" href="https://bigd.big.ac.cn:443/ncov/static/css/my.css" />
+<link href="https://cdn.bootcss.com/bootstrap-slider/10.6.2/css/bootstrap-slider.min.css" rel="stylesheet">
 
+<script src="https://cdn.bootcss.com/echarts/4.7.0/echarts.min.js"></script>
 
-<script src="https://bigd.big.ac.cn:443/ncov/static/js/jquery-1.11.3.min.js"></script>
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+    integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+    crossorigin="" />
+<!-- Make sure put this AFTER Leaflet's CSS -->
+<script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+    integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+    crossorigin=""></script>
+<script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
 
-<!-- <script src="https://bigd.big.ac.cn:443/ncov/static/js/bootstrap.min.js"></script> -->
-<script src="https://bigd.big.ac.cn:443/ncov/static/sui/semantic.min.js"></script>
+<!-- gridstack.js -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@1.1.1/dist/gridstack.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/gridstack@1.1.1/dist/gridstack.all.js"></script>
+
+<!-- <script src="https://bigd.big.ac.cn:443/ncov/static/js/jquery-1.11.3.min.js"></script> -->
+<!-- <script src="https://bigd.big.ac.cn:443/ncov/static/sui/semantic.min.js"></script> -->
 
 <div class="ui vertical sidebar menu">
     <a class="item" href="https://bigd.big.ac.cn" target="_blank"><img class="ui tiny image"
@@ -53,8 +68,8 @@
     </div>
 </div>
 
-<div class="ui top fixed small compact menu">
-    <div class="ui fluid container">
+<div class="ui top fixed hidden small compact menu">
+    <div class="ui container">
         <a class="item" href="http://www.big.ac.cn" target="_blank"><strong style="font-size: 20px;">CNCB</strong></a>
         <a class="item" href="https://bigd.big.ac.cn" target="_blank"><img
                 src="https://bigd.big.ac.cn/cdn/image/notext-logo-small.png" style="margin-right: 10px" /> <strong
@@ -71,7 +86,7 @@
                 <a class="item" href="https://bigd.big.ac.cn:443/ncov/variation/annotation">Variation Annotation</a>
                 <a class="item" href="https://bigd.big.ac.cn:443/ncov/variation/heatmap">Variation Frequency</a>
                 <a class="item" href="https://bigd.big.ac.cn:443/ncov/tree">Phylogentic Tree</a>
-                <a class="item" href="https://bigd.big.ac.cn:443/ncov/network">Viral Genotyping Map</a>
+                <a class="item" href="https://bigd.big.ac.cn:443/ncov/haplotype">Viral Genotyping Map</a>
             </div>
         </div>
         <div class="ui simple dropdown item">
@@ -103,26 +118,43 @@
         height: 0px;
     }
 </style>
+
+
 <div class="main-container" style="padding-top: 46.234px;">
 
     <div class="sidebar-panel">
 
-        <div class="node-table">
-            <div id="legendPanel" style="height:100%;"></div>
-        </div>
-
         <div class="link-table">
-            <h4 id="linkInfo"></h4>
-            <div class="table-responsive">
-                <table id="linkTable" class="table"></table>
-            </div>
+            <div id="mapid"></div>
         </div>
 
+        <div class="bottom-left" style="position: relative;">
+            <div style="position: absolute; top: 10px; right: 10px;z-index: 100;">
+                <i id="showTable" class="fas fa-table"></i>
+                <i id="showSnp" class="fas fa-cubes"></i>
+            </div>
+            
+            <div class="node-table" id="genePlot" style="position:relative;"></div>
+            <table id="detail" style="display: none;"> </table>
+        </div>
+        
     </div>
 
     <div class="plot-panel">
 
         <div class="network-panel">
+
+            <div class="form-group" style="position: absolute; bottom: 2px; left: 80px;">
+                <label for="speed">Speed</label>
+                <select class="form-control" id="speed">
+                    <option value="10">10ms/day</option>
+                    <option value="50">50ms/day</option>
+                    <option value="100" selected>100ms/day</option>
+                    <option value="500">500ms/day</option>
+                    <option value="1000">1000ms/day</option>
+                </select>
+            </div>
+
 
             <i class="fas fa-question-circle" data-trigger="hover" data-container="body" data-toggle="popover"
                 data-placement="bottom"
@@ -137,24 +169,70 @@
             </div>
 
 
-            <div class="dropdown" hidden>
-                <i class="fas fa-sliders-h" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <form class="dropdown-menu p-4" style="width: 400px;">
-                        <div class="form-group">
-                            <label for="exampleFormControlSelect1">Region</label>
-                            <select class="form-control" id="exampleFormControlSelect1" data-stopPropagation="true">
-                                <option data-stopPropagation="true">Global</option>
-                                <option data-stopPropagation="true">Continents</option>
-                                <option data-stopPropagation="true">China</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="exampleDropdownFormPassword2">Date</label>
-                            <input data-stopPropagation="true" type="password" class="form-control"
-                                id="exampleDropdownFormPassword2" placeholder="TODO">
-                        </div>
-                    </form>
+            <div class="dropdown" style="position: absolute; top: 20px; right: 60px;">
+                <i class="fas fa-download" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 
+                </i>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item" id='exportPng'>PNG</a>
+                    <a class="dropdown-item" id="exportSvg">SVG</a>
+                </div>
+            </div>
+
+            <div class="dropdown">
+                <i class="fas fa-sliders-h" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <form class="dropdown-menu p-4" style="width: 450px;">
+                        <div class="form-group">
+                            <label>Branch Scale:&nbsp;</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="linkScaleType" value="sqrt" checked>
+                                <label class="form-check-label">Sqrt</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="linkScaleType" value="linear">
+                                <label class="form-check-label">Linear</label>
+                            </div>
+                            <div id="question2">
+                                <i class="fas fa-info-circle" data-toggle="tooltip"></i>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="linkSize">Branch Size:&nbsp;&nbsp;</label>
+                            <b>1&nbsp;&nbsp;</b>
+                            <input id="linkSize" type="text" data-stopPropagation="true" />
+                            <b>500</b>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Node Scale:&nbsp;&nbsp;&nbsp;</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="nodeScaleType" value="sqrt" checked>
+                                <label class="form-check-label">Sqrt</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="nodeScaleType" value="linear">
+                                <label class="form-check-label">Linear</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nodeSize">Node Size:&nbsp;&nbsp;&nbsp;</label>
+                            <b>1&nbsp;&nbsp;</b>
+                            <input id="nodeSize" type="text" data-stopPropagation="true" />
+                            <b>50</b>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="chargeSize">Charge:&nbsp;&nbsp;&nbsp;</label>
+
+                            <b>-100&nbsp;&nbsp;</b>
+                            <input id="chargeSize" type="text" data-stopPropagation="true" />
+                            <b>0</b>
+
+                        </div>
+
+                    </form>
                 </i>
             </div>
 
@@ -184,12 +262,41 @@
         </div>
 
         <div class="date-plot-panel">
-            <div id="barPlotControl">
-                <i class="fas fa-globe-americas" style="margin-bottom: 2px;"></i><br>
-                <i class="fas fa-calendar-alt"></i>
-            </div>
             <div id="datePlot"></div>
         </div>
     </div>
 
 </div>
+
+<script type="text/javascript">
+    var _paq = window._paq || [];
+    /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+    _paq.push(['trackPageView']);
+    _paq.push(['enableLinkTracking']);
+
+    (function () {
+        var u = "//bigd.big.ac.cn/web-analytics/";
+        _paq.push(['setTrackerUrl', u + 'matomo.php']);
+        _paq.push(['setSiteId', '3']);
+
+        var secondaryTracker = "https://analytics.escience.org.cn/piwik.php";
+        var secondaryWebsiteId = 8;
+        _paq.push(['addTracker', secondaryTracker, secondaryWebsiteId]);
+
+        var d = document, g = d.createElement('script'), s = d.getElementsByTagName('script')[0];
+        g.type = 'text/javascript';
+        g.async = true;
+        g.defer = true;
+        g.src = u + 'matomo.js';
+        s.parentNode.insertBefore(g, s);
+    })();
+</script>
+<script>
+    var _hmt = _hmt || [];
+    (function () {
+        var hm = document.createElement("script");
+        hm.src = "https://hm.baidu.com/hm.js?5edd5ac31f081513cb44bf955a91a568";
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+    })();
+</script>
